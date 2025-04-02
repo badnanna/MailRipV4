@@ -64,6 +64,16 @@ Tip or donate for faster development:
 
 '''
 
+# [BRIGHT DATA INFO]
+# SOCKS 5 PROXIES
+
+proxy_info = {
+    "host": "",
+    "port": "",
+    "username": "",
+    "password": ""
+}
+
 # global variables and stuff:
 targets_total = int(0)
 targets_left = int(0)
@@ -95,14 +105,26 @@ def checker_thread(checker_type, default_timeout, default_email):
         try:
             if checker_type == 'smtp':
                 result = sc.smtpchecker(
-                    float(default_timeout),
-                    str(default_email),
-                    str(f'{target}')
+                    default_timeout=float(default_timeout),
+                    default_email=str(default_email),
+                    target=str(f'{target}'),
+                    use_proxy=True,
+                    proxy_host=proxy_info['host'],
+                    proxy_port=proxy_info['port'],
+                    proxy_username=proxy_info['username'],
+                    proxy_password=proxy_info['password'],
+                    proxy_type=proxy_info['type']
                 )
             elif checker_type == 'imap':
                 result = ic.imapchecker(
-                    float(default_timeout),
-                    str(f'{target}')
+                    default_timeout=float(default_timeout),
+                    target=str(f'{target}'),
+                    use_proxy=True,
+                    proxy_host=proxy_info['host'],
+                    proxy_port=proxy_info['port'],
+                    proxy_username=proxy_info['username'],
+                    proxy_password=proxy_info['password'],
+                    proxy_type=proxy_info['type']
                 )
         except:
             pass
@@ -253,7 +275,7 @@ def main():
             if checker_result == True:
                 print(
                     '\n\n'
-                    + f'Mail.Rip V3 - ({checker_type}) checker results:\n'
+                    + f'Mail.Rip V4 - ({checker_type}) checker results:\n'
                     + 38*'-' + '\n\n'
                     + f'combos:    {str(targets_total)}\n'
                     + f'hits:      {str(hits)}\n'

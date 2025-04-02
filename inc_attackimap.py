@@ -47,14 +47,43 @@ except:
 # [FUNCTIONS]
 # -----------
 
-def imapchecker(default_timeout, target):
+def imapchecker(default_timeout, target, use_proxy=True, proxy_host='', proxy_port=0, proxy_username='', proxy_password=''):
     '''
-    Main checker function (IMAP).
+    Main checker function (IMAP) with Bright Data proxy support.
 
     :param float default_timeout: connection timeout set by user
     :param str target: emailpass combo to check
+    :param bool use_proxy: flag to enable/disable proxy
+    :param str proxy_host: Bright Data proxy host
+    :param int proxy_port: Bright Data proxy port
+    :param str proxy_username: Bright Data proxy username
+    :param str proxy_password: Bright Data proxy password
     :return: True (valid login), False (login not valid)
     '''
+    # Import required modules
+    import ssl
+    import imaplib
+    import socket
+    import socks
+
+    # Set up proxy if enabled
+    original_socket = None
+    if use_proxy and proxy_host and proxy_port:
+        # Store the original socket implementation
+        original_socket = socket.socket
+        
+        # Configure SOCKS proxy
+        socks.set_default_proxy(
+            proxy_type=socks.PROXY_TYPES['SOCKS5'],
+            addr=proxy_host,
+            port=proxy_port,
+            username=proxy_username,
+            password=proxy_password
+        )
+        
+        # Patch the socket module to use SOCKS
+        socket.socket = socks.socksocket
+
     # start the checking:
     try:
         # set variables and stuff:
@@ -249,8 +278,12 @@ def imapchecker(default_timeout, target):
         else:
             return False
     # on any errors while checking, write log before exit:
-    except:
-        result(output_checked, str(f'{new_target};result=check failed'))
+    except Exception as e:
+        result(output_checked, str(f'{new_target};result=check failed;error={str(e)}'))
         return False
+    finally:
+        # Restore original socket if proxy was used
+        if use_proxy and original_socket:
+            socket.socket = original_socket
 
 # DrPython3 (C) 2021 @ GitHub.com

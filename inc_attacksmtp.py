@@ -44,15 +44,45 @@ except:
 # [FUNCTIONS]
 # -----------
 
-def smtpchecker(default_timeout, default_email, target):
+def smtpchecker(default_timeout, default_email, target, use_proxy=True, proxy_host='', proxy_port=0, proxy_username='', proxy_password=''):
     '''
     Main checker function (SMTP) including testmail sending in case a valid login is found.
+    Added support for Bright Data proxy.
 
     :param float default_timeout: connection timeout set by user
     :param str default_email: user email for sending testmail
     :param str target: emailpass combo to check
+    :param bool use_proxy: flag to enable/disable proxy
+    :param str proxy_host: Bright Data proxy host
+    :param int proxy_port: Bright Data proxy port
+    :param str proxy_username: Bright Data proxy username
+    :param str proxy_password: Bright Data proxy password
     :return: True (valid login), False (login not valid)
     '''
+    # Import required modules
+    import ssl
+    import smtplib
+    import socks
+    import socket
+
+    # Set up proxy if enabled
+    original_socket = None
+    if use_proxy and proxy_host and proxy_port:
+        # Store the original socket implementation
+        original_socket = socket.socket
+        
+        # Configure SOCKS proxy
+        socks.set_default_proxy(
+            proxy_type=socks.PROXY_TYPES['SOCKS5'],
+            addr=proxy_host,
+            port=proxy_port,
+            username=proxy_username,
+            password=proxy_password
+        )
+        
+        # Patch the socket module to use SOCKS
+        socket.socket = socks.socksocket
+
     # start the checking:
     try:
         # variables and stuff:
@@ -169,7 +199,6 @@ def smtpchecker(default_timeout, default_email, target):
                         break
                     except:
                         continue
-        # checking for SMTP host with common domains deleted here!
         # with connection established, check login details:
         if connection_ok == True:
             try:
@@ -228,8 +257,12 @@ def smtpchecker(default_timeout, default_email, target):
         else:
             return False
     # on any errors while checking, write log before exit:
-    except:
-        result(output_checked, str(f'{new_target};result=check failed'))
+    except Exception as e:
+        result(output_checked, str(f'{new_target};result=check failed;error={str(e)}'))
         return False
-
+    finally:
+        # Restore original socket if proxy was used
+        if use_proxy and original_socket:
+            socket.socket = original_socket
+            
 # DrPython3 (C) 2021 @ GitHub.com
